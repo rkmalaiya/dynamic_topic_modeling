@@ -1,0 +1,238 @@
+---
+title: "All Countries Environmental Data"
+output:
+  word_document: default
+  html_notebook: default
+  pdf_document: default
+---
+
+## Method: CA
+
+Correspondence Analysis (CA) is a multivariate graphical technique designed to explore relationships among categorical variables. The outcome from correspondence analysis is a graphical display of the rows and columns of a contingency table that is designed to permit visualization of the salient relationships among the variable responses in a low-dimensional space. Such a representation reveals a more global picture of the relationships among row-column pairs which would otherwise not be detected through a pairwise analysis.
+
+**Calculate CA:**
+
+* Step 1: Compute row and column averages
+* Step 2: Compute the expected values
+* Step 3: Compute the residuals
+* Step 4: Plotting labels with similar residuals close together
+* Step 5: Interpreting the relationship between row and column labels
+
+**How to Interpret Correspondence Analysis Plots**
+
+Correspondence analysis does not show us which rows have the highest numbers, nor which columns have the highest numbers. It instead shows us the relativities. 
+
+* The further things are from the origin, the more discriminating they are.
+* Look at the length of the line connecting the row label to the origin. Longer lines indicate that the row label is highly associated with some of the column labels (i.e., it has at least one high residual).
+* Look at the length of the label connecting the column label to the origin. Longer lines again indicate a high association between the column label and one or more row labels.
+* Look at the angle formed between these two lines. Really small angles indicate association. 90 degree angles indicate no relationship. Angles near 180 degrees indicate negative associations.
+
+
+
+```{r echo=FALSE, results='hide', message=FALSE}
+library(ExPosition)
+library(InPosition)
+# use the last version of PTCA
+#devtools::install_github('HerveAbdi/PTCA4CATA')
+library(PTCA4CATA)
+library(corrplot)
+library(ggplot2)
+#devtools::install_github('HerveAbdi/data4PCCAR')
+library(data4PCCAR)
+library(corrplot)
+library(RColorBrewer)
+library("gplots")
+library(tidyverse)
+```
+
+## Dataset
+
+
+```{r echo=FALSE}
+tweets_eth <- readRDS('tidy_tweets_per_week.rds')
+
+tweets_eth <- as.data.frame(tweets_eth) %>% mutate(design = 'eth') %>% column_to_rownames(var = 'word')  
+
+tweets <- tweets_eth
+tweets
+
+```
+
+* Research Question
+
+  + Do we see new words appearing on a particular week
+
+## Analysis 
+
+
+```{r echo=FALSE, results='hide'}
+
+design <- tweets$design
+
+tweets <- tweets %>% select(-design)
+tweets
+```
+
+### Heatmap 
+
+```{r echo=FALSE, message=FALSE}
+heatmap.2(as.matrix(tweets), col = rev(heat.colors(nrow(tweets_eth)))) #brewer.pal(n = 5, name='Set1'))
+```
+
+```{r echo=FALSE, results='hide'}
+
+resCA.sym  <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetric = TRUE, graphs = FALSE)
+
+# to run a plain CA but asymetric
+resCA.asym <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetric = FALSE, graphs = FALSE)
+
+tweets_inf <- epCA.inference.battery(tweets, DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
+tweets_inf_t <- epCA.inference.battery(t(tweets), DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
+
+```
+
+
+### Scree Plot
+Gives amount of information explained by corresponding component. Gives an intuition to decide which components best represent data in order to answer the research question.
+
+P.S. The most contribution component may not always be most useful for a given research question. 
+
+```{r}
+PTCA4CATA::PlotScree(ev = resCA.sym$ExPosition.Data$eigs,
+                      #p.ev =  we_data_inf$Inference.Data$components$p.vals,
+                      title = 'SCREE Plot',
+                      plotKaiser = TRUE
+)
+```
+
+### Factor Scores 
+
+
+```{r echo=FALSE, results='hide'}
+Fj.a <- resCA.asym$ExPosition.Data$fj
+cj.a <- resCA.asym$ExPosition.Data$cj
+ci.a <- resCA.asym$ExPosition.Data$ci
+
+Fi   <- resCA.sym$ExPosition.Data$fi
+Fj   <- resCA.sym$ExPosition.Data$fj
+constraints.sym <- minmaxHelper(mat1 = Fi, mat2  = Fj)
+constraints.asym <- minmaxHelper(mat1 = Fi, mat2  = Fj.a)
+
+color4Authors <-prettyGraphsColorSelection(n.colors = nrow(ci.a))
+```
+
+#### Symmetric Plot
+
+```{r echo=FALSE, results='hide'}
+symMap  <- createFactorMapIJ(Fi,Fj,
+                             col.points.i = color4Authors,
+                             col.labels.i = color4Authors)
+
+asymMap  <- createFactorMapIJ(Fi,Fj.a,
+                              col.points.i = color4Authors,
+                              col.labels.i = color4Authors)
+
+labels4CA <- createxyLabels(resCA = resCA.sym)
+
+```
+
+```{r}
+map.IJ.sym <- symMap$baseMap + symMap$I_labels + symMap$I_points +
+  symMap$J_labels + symMap$J_points + labels4CA
+print(map.IJ.sym)
+```
+
+#### Asymmetric Plot
+
+```{r}
+map.IJ.asym <- asymMap$baseMap + asymMap$I_labels + 
+  asymMap$I_points + asymMap$J_labels + 
+  asymMap$J_points + labels4CA
+print(map.IJ.asym)
+
+```
+
+#### Most Contributing Variables
+
+```{r echo=FALSE, results='hide'}
+color4I <- brewer.pal(n = nrow(ci.a), name='Set3')
+# baseMaps ----
+ctr.I <- ci.a * sign(Fi[,1]) 
+```
+
+```{r}
+
+PTCA4CATA::PrettyBarPlot2(ctr.I[,1], 
+                       threshold = 1 / NROW(ctr.I), 
+                       font.size = 4, 
+                       color4bar = gplots::col2hex(color4I), 
+                       color4ns = 'grey', 
+                       main = 'Observations: Contributions (Signed)', 
+                       ylab = 'Contributions', ylim = c(1.2*min(ctr.I),
+                        1.2*max(ctr.I) ), 
+                       horizontal = FALSE ) 
+
+```
+
+```{r echo=FALSE, results='hide'}
+# Get some colors ----
+#color4Authors <-prettyGraphsColorSelection(n.colors = nrow(ci.a))
+color4J <- brewer.pal(n = nrow(cj.a), name='Set1')
+# baseMaps ----
+ctr.J <- cj.a * sign(Fj[,1]) 
+```
+
+```{r}
+PTCA4CATA::PrettyBarPlot2(ctr.J[,1], 
+                       threshold = 1 / NROW(ctr.J), 
+                       font.size = 4, 
+                       color4bar = color4J, 
+                       color4ns = 'grey', 
+                       main = 'Observations: Contributions (Signed)', 
+                       ylab = 'Contributions', ylim = c(1.2*min(ctr.J),
+                        1.2*max(ctr.J) ), 
+                       horizontal = FALSE ) 
+
+```
+
+### Inference CA
+
+```{r echo=FALSE, results='hide'}
+BR <- we_data_inf$Inference.Data$ fj.boots$tests$boot.ratios
+col4J = brewer.pal(n = 3, name='Set1')
+laDim = 1
+
+```
+
+```{r}
+ba001.BR1 <- PrettyBarPlot2(BR[,laDim],
+                          threshold = 2,
+                          font.size = 5,
+                          color4bar = gplots::col2hex(col4J), # we need hex code
+                          main = paste0('Bootstrap ratio ',laDim),
+                          ylab = 'Bootstrap ratios'
+                          #ylim = c(1.2*min(BR[,laDim]), 1.2*max(BR[,laDim]))
+)
+print(ba001.BR1)
+
+```
+
+
+```{r echo=FALSE, results='hide'}
+BR <- we_data_inf_t$Inference.Data$fj.boots$tests$boot.ratios
+col4J = brewer.pal(n = 8, name='Set1')
+laDim = 1
+```
+
+```{r}
+wedata.BR1 <- PrettyBarPlot2(BR[,laDim],
+                          threshold = 2,
+                          font.size = 5,
+                          color4bar = gplots::col2hex(col4J), # we need hex code
+                          main = paste0('Bootstrap ratio ',laDim),
+                          ylab = 'Bootstrap ratios'
+                          #ylim = c(1.2*min(BR[,laDim]), 1.2*max(BR[,laDim]))
+)
+print(wedata.BR1)
+```
+

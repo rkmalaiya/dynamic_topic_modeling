@@ -1,12 +1,14 @@
 ---
-title: "All Countries Environmental Data"
+title: "Latent Topic Modeling on Twitter Data"
 output:
-  word_document: default
-  html_notebook: default
   pdf_document: default
+  html_document:
+    df_print: paged
+  html_notebook: default
+  word_document: default
 ---
 
-## Method: CA
+# Method: CA
 
 Correspondence Analysis (CA) is a multivariate graphical technique designed to explore relationships among categorical variables. The outcome from correspondence analysis is a graphical display of the rows and columns of a contingency table that is designed to permit visualization of the salient relationships among the variable responses in a low-dimensional space. Such a representation reveals a more global picture of the relationships among row-column pairs which would otherwise not be detected through a pairwise analysis.
 
@@ -30,6 +32,10 @@ Correspondence analysis does not show us which rows have the highest numbers, no
 
 
 ```{r echo=FALSE, results='hide', message=FALSE}
+
+knitr::opts_chunk$set(fig.width=10, fig.height=6,
+                      echo=TRUE, warning=FALSE, message=FALSE) 
+
 library(ExPosition)
 library(InPosition)
 # use the last version of PTCA
@@ -45,42 +51,56 @@ library("gplots")
 library(tidyverse)
 ```
 
-## Dataset
+# Dataset
 
 
 ```{r echo=FALSE}
-tweets_eth <- readRDS('tidy_tweets_per_week_eth.rds')
-tweets_facebook <- readRDS('tidy_tweets_per_week_facebook.rds')
+
+col_groups = c('word','10','11','12', '15')
+tweets_eth <- readRDS('../../data/tidy_tweets_per_week_log_eth_50.rds')[, col_groups]
+tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_log_facebook_50.rds')[,col_groups]
+tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_log_bitcoin_50.rds')[,col_groups]
 
 tweets_eth <- as.data.frame(tweets_eth) %>% column_to_rownames(var = 'word')  
 tweets_facebook <- as.data.frame(tweets_facebook) %>% column_to_rownames(var = 'word')  
+tweets_bitcoin <- as.data.frame(tweets_bitcoin) %>% column_to_rownames(var = 'word')  
 
-tweets <- rbind(tweets_eth,tweets_facebook)
-tweets
+tweets_eth <- tweets_eth[apply(tweets_eth, 1, function(x) ifelse(all(x==0),FALSE,TRUE)),]
+tweets_facebook <- tweets_facebook[apply(tweets_facebook, 1, function(x) ifelse(all(x==0),FALSE,TRUE)),]
+tweets_bitcoin <- tweets_bitcoin[apply(tweets_bitcoin, 1, function(x) ifelse(all(x==0),FALSE,TRUE)),]
 
+
+rownames(tweets_eth) <- paste0(rownames(tweets_eth),'_e')
+rownames(tweets_facebook) <- paste0(rownames(tweets_facebook),'_f')
+rownames(tweets_bitcoin) <- paste0(rownames(tweets_bitcoin),'_b')
+
+tweets <- rbind(tweets_eth,tweets_facebook, tweets_bitcoin)
+head(tweets)
 ```
 
 * Research Question
 
   + Do we see new words appearing on a particular week
 
-## Analysis 
+# Analysis 
 
 
 ```{r echo=FALSE, results='hide'}
 
 design_eth <- rep('D_Ethurium', nrow(tweets_eth))
 design_facebook <- rep('D_Facebook', nrow(tweets_facebook))
+design_bitcoin <- rep('D_Bitcoin', nrow(tweets_bitcoin))
 
-design <- c(design_eth, design_facebook)
+design <- c(design_eth, design_facebook, design_bitcoin)
 
 ```
 
-### Heatmap 
+## Heatmap 
 
 ```{r echo=FALSE, message=FALSE}
-heatmap.2(as.matrix(tweets), col = rev(heat.colors(nrow(tweets_eth)))) #brewer.pal(n = 5, name='Set1'))
+heatmap.2(as.matrix(tweets), col = rev(heat.colors(nrow(tweets_eth))), Rowv = NULL, Colv = NULL, dendrogram = 'none',trace = 'none',margins = c(8, 16)) #brewer.pal(n = 5, name='Set1'))
 ```
+
 
 ```{r echo=FALSE, results='hide'}
 
@@ -89,13 +109,10 @@ resCA.sym  <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetri
 # to run a plain CA but asymetric
 resCA.asym <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetric = FALSE, graphs = FALSE)
 
-#tweets_inf <- epCA.inference.battery(tweets, DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
-#tweets_inf_t <- epCA.inference.battery(t(tweets), DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
-
 ```
 
 
-### Scree Plot
+## Scree Plot
 Gives amount of information explained by corresponding component. Gives an intuition to decide which components best represent data in order to answer the research question.
 
 P.S. The most contribution component may not always be most useful for a given research question. 
@@ -108,7 +125,7 @@ PTCA4CATA::PlotScree(ev = resCA.sym$ExPosition.Data$eigs,
 )
 ```
 
-### Factor Scores 
+## Factor Scores 
 
 
 ```{r echo=FALSE, results='hide'}
@@ -121,10 +138,13 @@ Fj   <- resCA.sym$ExPosition.Data$fj
 constraints.sym <- minmaxHelper(mat1 = Fi, mat2  = Fj)
 constraints.asym <- minmaxHelper(mat1 = Fi, mat2  = Fj.a)
 
-color4Authors <- recode(design, D_Ethurium = "RED", D_Facebook="GREEN") #prettyGraphsColorSelection(n.colors = nrow(ci.a))
+design_col = brewer.pal(n = 3, name='Set1')
+
+color4Authors <- recode(design, D_Ethurium= design_col[1], D_Facebook=design_col[2], D_Bitcoin = design_col[3]) #prettyGraphsColorSelection(n.colors = nrow(ci.a))
+Fj.a
 ```
 
-#### Symmetric Plot
+### Asymmetric Plot
 
 ```{r echo=FALSE, results='hide'}
 symMap  <- createFactorMapIJ(Fi,Fj,
@@ -135,31 +155,72 @@ asymMap  <- createFactorMapIJ(Fi,Fj.a,
                               col.points.i = color4Authors,
                               col.labels.i = color4Authors)
 
+legend_fi <- aggregate(Fi, by=list(design), mean)
+rownames(legend_fi) <- legend_fi[,1]
+legend_fi <- legend_fi[,2:ncol(legend_fi)]
+
+legend  <- createFactorMap(legend_fi,
+                             col.points = design_col,
+                             col.labels = design_col,cex = 6,alpha.points = 0.15, alpha.labels = 0.15,text.cex = 8)
+
+
 labels4CA <- createxyLabels(resCA = resCA.sym)
 
 ```
 
-```{r}
+```{r echo=FALSE}
 map.IJ.sym <- symMap$baseMap + symMap$I_labels + symMap$I_points +
-  symMap$J_labels + symMap$J_points + labels4CA
-print(map.IJ.sym)
+  symMap$J_labels + symMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+#print(map.IJ.sym)
 ```
 
+```{r}
 #### Asymmetric Plot
 
-```{r}
-map.IJ.asym <- asymMap$baseMap + asymMap$I_labels + 
-  asymMap$I_points + asymMap$J_labels + 
-  asymMap$J_points + labels4CA
+map.IJ.asym <- asymMap$baseMap + asymMap$J_labels + 
+  asymMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
 print(map.IJ.asym)
 
 ```
 
-#### Most Contributing Variables
+
+```{r}
+#### Asymmetric Plot
+
+map.IJ.asym <- asymMap$baseMap + asymMap$I_labels + 
+  asymMap$I_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+print(map.IJ.asym)
+
+```
+
+```{r}
+#### Asymmetric Plot
+
+map.IJ.asym <- asymMap$baseMap + asymMap$I_labels + 
+  asymMap$I_points + asymMap$J_labels + 
+  asymMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+print(map.IJ.asym)
+
+```
+
+### Symmetric Plot
+
+```{r echo=FALSE}
+map.IJ.sym <- symMap$baseMap + symMap$J_labels + symMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+print(map.IJ.sym)
+```
+
+```{r echo=FALSE}
+map.IJ.sym <- symMap$baseMap + symMap$I_labels + symMap$I_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+print(map.IJ.sym)
+```
+
+
+## Most Contributing Variables
 
 ```{r echo=FALSE, results='hide'}
-color4I <- brewer.pal(n = 12, name='Set3')
-color4I <- rep(color4I, length.out = nrow(ci.a))
+color4I <- brewer.pal(n = 5, name='Set1')
+color4I <- colorRampPalette(color4I)(nrow(ci.a))
 # baseMaps ----
 ctr.I <- ci.a * sign(Fi[,1]) 
 ```
@@ -181,8 +242,8 @@ PTCA4CATA::PrettyBarPlot2(ctr.I[,1],
 ```{r echo=FALSE, results='hide'}
 # Get some colors ----
 #color4Authors <-prettyGraphsColorSelection(n.colors = nrow(ci.a))
-color4J <- brewer.pal(n = 9, name='Set1')
-color4J <- rep(color4J, length.out = nrow(cj.a))
+color4J <- brewer.pal(n = 5, name='Set1')
+color4J <- colorRampPalette(color4J)(nrow(cj.a))
 
 # baseMaps ----
 ctr.J <- cj.a * sign(Fj[,1]) 
@@ -201,11 +262,13 @@ PTCA4CATA::PrettyBarPlot2(ctr.J[,1],
 
 ```
 
-### Inference CA
+# Inference CA
 
 ```{r echo=FALSE, results='hide'}
-BR <- we_data_inf$Inference.Data$ fj.boots$tests$boot.ratios
+tweets_inf <- epCA.inference.battery(t(tweets), DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
+BR <- tweets_inf$Inference.Data$ fj.boots$tests$boot.ratios
 col4J = brewer.pal(n = 3, name='Set1')
+col4J = colorRampPalette(col4J)(nrow(tweets))
 laDim = 1
 
 ```
@@ -216,8 +279,8 @@ ba001.BR1 <- PrettyBarPlot2(BR[,laDim],
                           font.size = 5,
                           color4bar = gplots::col2hex(col4J), # we need hex code
                           main = paste0('Bootstrap ratio ',laDim),
-                          ylab = 'Bootstrap ratios'
-                          #ylim = c(1.2*min(BR[,laDim]), 1.2*max(BR[,laDim]))
+                          ylab = 'Bootstrap ratios',
+                          ylim = c(60*min(BR[,laDim]), 1.2*max(BR[,laDim]))
 )
 print(ba001.BR1)
 
@@ -225,8 +288,11 @@ print(ba001.BR1)
 
 
 ```{r echo=FALSE, results='hide'}
-BR <- we_data_inf_t$Inference.Data$fj.boots$tests$boot.ratios
-col4J = brewer.pal(n = 8, name='Set1')
+tweets_inf_t <- epCA.inference.battery(tweets, DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
+BR <- tweets_inf_t$Inference.Data$fj.boots$tests$boot.ratios
+
+col4J = brewer.pal(n = 10, name='Set3')
+col4J = colorRampPalette(col4J)(ncol(tweets))
 laDim = 1
 ```
 
@@ -241,4 +307,5 @@ wedata.BR1 <- PrettyBarPlot2(BR[,laDim],
 )
 print(wedata.BR1)
 ```
+
 

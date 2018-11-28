@@ -1,9 +1,11 @@
 ---
-title: "All Countries Environmental Data"
+title: "Latent Topic Modeling on Twitter Data"
 output:
-  word_document: default
+  html_document:
+    df_print: paged
   html_notebook: default
   pdf_document: default
+  word_document: default
 ---
 
 ## Method: CA
@@ -49,13 +51,15 @@ library(tidyverse)
 
 
 ```{r echo=FALSE}
-tweets_eth <- readRDS('tidy_tweets_per_week_eth.rds')
-tweets_facebook <- readRDS('tidy_tweets_per_week_facebook.rds')
+tweets_eth <- readRDS('tidy_tweets_per_week_n_eth_50.rds')
+tweets_facebook <- readRDS('tidy_tweets_per_week_n_facebook_50.rds')
+tweets_bitcoin <- readRDS('tidy_tweets_per_week_n_bitcoin_50.rds')
 
 tweets_eth <- as.data.frame(tweets_eth) %>% column_to_rownames(var = 'word')  
 tweets_facebook <- as.data.frame(tweets_facebook) %>% column_to_rownames(var = 'word')  
+tweets_bitcoin <- as.data.frame(tweets_bitcoin) %>% column_to_rownames(var = 'word')  
 
-tweets <- rbind(tweets_eth,tweets_facebook)
+tweets <- rbind(tweets_eth,tweets_facebook, tweets_bitcoin)
 tweets
 
 ```
@@ -71,8 +75,9 @@ tweets
 
 design_eth <- rep('D_Ethurium', nrow(tweets_eth))
 design_facebook <- rep('D_Facebook', nrow(tweets_facebook))
+design_bitcoin <- rep('D_Bitcoin', nrow(tweets_bitcoin))
 
-design <- c(design_eth, design_facebook)
+design <- c(design_eth, design_facebook, design_bitcoin)
 
 ```
 
@@ -88,7 +93,9 @@ resCA.sym  <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetri
 
 # to run a plain CA but asymetric
 resCA.asym <- epCA(tweets, DESIGN = design, make_design_nominal = TRUE, symmetric = FALSE, graphs = FALSE)
+```
 
+```{r}
 #tweets_inf <- epCA.inference.battery(tweets, DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
 #tweets_inf_t <- epCA.inference.battery(t(tweets), DESIGN = design, make_design_nominal = TRUE, graphs = FALSE)
 
@@ -121,7 +128,11 @@ Fj   <- resCA.sym$ExPosition.Data$fj
 constraints.sym <- minmaxHelper(mat1 = Fi, mat2  = Fj)
 constraints.asym <- minmaxHelper(mat1 = Fi, mat2  = Fj.a)
 
-color4Authors <- recode(design, D_Ethurium = "RED", D_Facebook="GREEN") #prettyGraphsColorSelection(n.colors = nrow(ci.a))
+design_col = brewer.pal(n = 3, name='Set1')
+#design_col = c('RED', 'BLUE', 'GREEN')
+
+color4Authors <- recode(design, D_Ethurium= design_col[1], D_Facebook=design_col[2], D_Bitcoin = design_col[3])
+#prettyGraphsColorSelection(n.colors = nrow(ci.a))
 ```
 
 #### Symmetric Plot
@@ -135,22 +146,31 @@ asymMap  <- createFactorMapIJ(Fi,Fj.a,
                               col.points.i = color4Authors,
                               col.labels.i = color4Authors)
 
+legend_fi <- aggregate(Fi, by=list(design), mean)
+rownames(legend_fi) <- legend_fi[,1]
+legend_fi <- legend_fi[,2:ncol(legend_fi)]
+
+legend  <- createFactorMap(legend_fi,
+                             col.points = design_col,
+                             col.labels = design_col,cex = 8,alpha.points = 0.4, alpha.labels = 0.4,text.cex = 8)
+
+
 labels4CA <- createxyLabels(resCA = resCA.sym)
 
 ```
 
 ```{r}
-map.IJ.sym <- symMap$baseMap + symMap$I_labels + symMap$I_points +
-  symMap$J_labels + symMap$J_points + labels4CA
-print(map.IJ.sym)
+map.IJ.sym <- symMap$baseMap + symMap$I_points + #symMap$I_labels + 
+  symMap$J_labels + symMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
+#print(map.IJ.sym)
 ```
 
 #### Asymmetric Plot
 
 ```{r}
-map.IJ.asym <- asymMap$baseMap + asymMap$I_labels + 
+map.IJ.asym <- asymMap$baseMap + #asymMap$I_labels + 
   asymMap$I_points + asymMap$J_labels + 
-  asymMap$J_points + labels4CA
+  asymMap$J_points + labels4CA + legend$zeMap_dots + legend$zeMap_text
 print(map.IJ.asym)
 
 ```
@@ -204,7 +224,7 @@ PTCA4CATA::PrettyBarPlot2(ctr.J[,1],
 ### Inference CA
 
 ```{r echo=FALSE, results='hide'}
-BR <- we_data_inf$Inference.Data$ fj.boots$tests$boot.ratios
+BR <- tweets_inf$Inference.Data$ fj.boots$tests$boot.ratios
 col4J = brewer.pal(n = 3, name='Set1')
 laDim = 1
 
@@ -225,7 +245,7 @@ print(ba001.BR1)
 
 
 ```{r echo=FALSE, results='hide'}
-BR <- we_data_inf_t$Inference.Data$fj.boots$tests$boot.ratios
+BR <- tweets_inf_t$Inference.Data$fj.boots$tests$boot.ratios
 col4J = brewer.pal(n = 8, name='Set1')
 laDim = 1
 ```

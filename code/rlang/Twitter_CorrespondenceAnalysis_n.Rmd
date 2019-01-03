@@ -56,9 +56,14 @@ library(tidyverse)
 
 ```{r echo=FALSE}
 
-tweets_eth <- readRDS('../../data/tidy_tweets_per_week_log_eth_50.rds')
-tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_log_facebook_50.rds')
-tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_log_bitcoin_50.rds')
+#tweets_eth <- readRDS('../../data/tidy_tweets_per_week_log_eth_50.rds')
+#tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_log_facebook_50.rds')
+#tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_log_bitcoin_50.rds')
+
+tweets_eth <- readRDS('../../data/tidy_tweets_per_week_n_eth.rds')
+tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_n_facebook.rds')
+tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_n_bitcoin.rds')
+
 
 tweets_eth <- as.data.frame(tweets_eth) %>% column_to_rownames(var = 'word')  
 tweets_facebook <- as.data.frame(tweets_facebook) %>% column_to_rownames(var = 'word')  

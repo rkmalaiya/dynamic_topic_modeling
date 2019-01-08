@@ -1,1 +1,67 @@
-# latent_aspect_modeling
+
+# Twitter Multi Variate Analysis
+
+## Information about Data
+Twitter feeds for 3 different streams, Ethereum, Bitcoin, Facebook for March and April 2018
+
+## Research Question 
+
+***Does, otherwise uncorrelated twitter channels, tend to discuss on similar topics as a result of world level event?***
+
+## Methods
+
+### Correspondence Analysis
+* Contingency table: Count of words (Top 10) / Log of Count of Words (Top 50)
+    + Week 9 – 18
+    + Week 9, 16, 18
+    + Week 13, 14, 17
+    + Week 10, 11, 12, 15
+
+
+## Dataset
+
+![image1](data/images/image1.png)
+
+![image2](data/images/image1.png)
+
+![image3](data/images/image3.png)
+
+## Heatmap
+![image13](data/images/image13.png)
+
+## Scree Plot
+### For Count of words
+
+![image4](data/images/image4.png)
+
+### For log of count of words
+
+![image5](data/images/image5.png)
+
+## Mapping mean of word occurances vs week
+### For Count of words
+![image6](data/images/image6.png)
+
+### For log of count of words
+![image7](data/images/image7.png)
+
+## Dividing weeks into groups
+### For Count of words
+#### Week 9, 16, 18
+![image15](data/images/image15.png)
+
+#### Week 10, 11, 12, 15
+![image14](data/images/image14.png)
+
+#### Week 13, 14, 17
+![image16](data/images/image16.png)
+
+### For log of count of words
+#### Week 9, 16, 18
+![image21](data/images/image21.png)
+
+#### Week 10, 11, 12 ,15
+![image20](data/images/image20.png)
+
+#### Week 13, 14, 17
+![image22](data/images/image22.png)

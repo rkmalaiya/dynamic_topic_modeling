@@ -27,8 +27,13 @@ Twitter feeds for 3 different streams, Ethereum, Bitcoin, Facebook for March and
 ![image3](data/images/image3.png)
 
 ## Heatmap
+### Top 10
 ![image13](data/images/image13.png)
 
+### Top 50
+![image13](data/images/image12.png)
+
+# Correspondence Analysis
 ## Scree Plot
 ### For Count of words
 
@@ -38,25 +43,35 @@ Twitter feeds for 3 different streams, Ethereum, Bitcoin, Facebook for March and
 
 ![image5](data/images/image5.png)
 
-## Mapping mean of word occurances vs week
-### For Count of words
+## Plotting word occurances vs week - *Top 10*
+![image32](data/images/image32.png)
+
+## Plotting word occurances vs weeks - *Top 10*
+![image34](data/images/image34.png)
+
+## Plotting word occurances vs week - *Top 50*
+![image42](data/images/image42.png)
+
+## Plotting word occurances vs weeks - *Top 50*
+![image44](data/images/image44.png)
+
+## Mapping word occurances vs week (Only means of each dataset)
+### For Count of words (Top 10)
 ![image6](data/images/image6.png)
 
 ### For log of count of words
 ![image7](data/images/image7.png)
 
 ## Dividing weeks into groups
-### For Count of words
+### For Count of words *(Top 10)*
 #### Week 9, 16, 18
 ![image15](data/images/image15.png)
-
 #### Week 10, 11, 12, 15
 ![image14](data/images/image14.png)
-
 #### Week 13, 14, 17
 ![image16](data/images/image16.png)
 
-### For log of count of words
+### For log of count of words *(Top 50)*
 #### Week 9, 16, 18
 ![image21](data/images/image21.png)
 

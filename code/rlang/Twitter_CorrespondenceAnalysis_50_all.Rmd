@@ -1,11 +1,11 @@
 ---
 title: "Latent Topic Modeling on Twitter Data"
 output:
-  word_document: default
-  pdf_document: default
-  html_notebook: default
   html_document:
     df_print: paged
+  pdf_document: default
+  html_notebook: default
+  word_document: default
 ---
 
 # Method: CA
@@ -61,27 +61,22 @@ library(tidyverse)
 #tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_log_facebook_50.rds')
 #tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_log_bitcoin_50.rds')
 
-tweets_eth <- readRDS('../../data/tidy_tweets_per_week_n_eth.rds')
-tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_n_facebook.rds')
-tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_n_bitcoin.rds')
-tweets <- rbind(tweets_eth,tweets_facebook, tweets_bitcoin)
+tweets_eth <- readRDS('../../data/tidy_tweets_per_week_n_eth_50.rds')
+tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_n_facebook_50.rds')
+tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_n_bitcoin_50.rds')
 
-tweets_eth_50 <- readRDS('../../data/tidy_tweets_per_week_n_eth_50.rds')
-tweets_facebook_50 <- readRDS('../../data/tidy_tweets_per_week_n_facebook_50.rds')
-tweets_bitcoin_50 <- readRDS('../../data/tidy_tweets_per_week_n_bitcoin_50.rds')
+
+#tweets_eth <- readRDS('../../data/tidy_tweets_per_week_n_eth.rds')
+#tweets_facebook <- readRDS('../../data/tidy_tweets_per_week_n_facebook.rds')
+#tweets_bitcoin <- readRDS('../../data/tidy_tweets_per_week_n_bitcoin.rds')
+tweets <- rbind(tweets_eth,tweets_facebook, tweets_bitcoin)
 
 
 tweets <- as.data.frame(tweets) %>% group_by(word) %>% summarise_all(sum) #
 tweets <- as.data.frame(tweets) %>% column_to_rownames(var = 'word')
-
 tweets_eth <- as.data.frame(tweets_eth) %>% column_to_rownames(var = 'word')
 tweets_facebook <- as.data.frame(tweets_facebook) %>% column_to_rownames(var = 'word')
 tweets_bitcoin <- as.data.frame(tweets_bitcoin) %>% column_to_rownames(var = 'word')
-
-tweets_eth_50 <- as.data.frame(tweets_eth_50) %>% column_to_rownames(var = 'word')
-tweets_facebook_50 <- as.data.frame(tweets_facebook_50) %>% column_to_rownames(var = 'word')
-tweets_bitcoin_50 <- as.data.frame(tweets_bitcoin_50) %>% column_to_rownames(var = 'word')
-
 tweets
 ```
 
@@ -212,24 +207,6 @@ print(map.IJ.asym)
 
 ```{r }
 
-tweets_facebook_supp <- supplementaryRows(tweets_facebook,resCA.asym)
-asymMap_supp  <- createFactorMapIJ(tweets_facebook_supp$fii,Fj,
-                             #col.points.i = color4Authors,
-                             #col.labels.i = color4Authors
-                             )
-
-map.IJ.asym <- asymMap$baseMap + #asymMap$I_labels + 
-  #asymMap$I_points + 
-  asymMap$J_labels + 
-  asymMap$J_points + labels4CA + #+ legend$zeMap_dots + legend$zeMap_text
-  asymMap_supp$I_points + asymMap_supp$I_labels
-
-print(map.IJ.asym)
-
-```
-
-```{r }
-
 tweets_eth_supp <- supplementaryRows(tweets_eth,resCA.asym)
 asymMap_supp  <- createFactorMapIJ(tweets_eth_supp$fii,Fj,
                              #col.points.i = color4Authors,
@@ -248,10 +225,8 @@ print(map.IJ.asym)
 
 ```{r }
 
-
-
-tweets_eth_supp <- supplementaryRows(tweets_eth_50,resCA.asym)
-asymMap_supp  <- createFactorMapIJ(tweets_eth_supp$fii[tweets_eth_supp$fii[,1] > 0,] ,Fj[Fj[,1] > 0,] ,
+tweets_facebook_supp <- supplementaryRows(tweets_facebook,resCA.asym)
+asymMap_supp  <- createFactorMapIJ(tweets_facebook_supp$fii,Fj,
                              #col.points.i = color4Authors,
                              #col.labels.i = color4Authors
                              )
@@ -263,24 +238,6 @@ map.IJ.asym <- asymMap$baseMap + #asymMap$I_labels +
   asymMap_supp$I_points + asymMap_supp$I_labels
 
 print(map.IJ.asym)
-
-```
-
-```{r}
-
-tweets_eth_50['#geoloc',]
-
-```
-
-```{r}
-
-tweets_eth_50['#freecoin',]
-
-```
-
-```{r}
-
-tweets_eth_50['#pdata',]
 
 ```
 
@@ -299,43 +256,6 @@ map.IJ.asym <- asymMap$baseMap + #asymMap$I_labels +
   asymMap_supp$I_points + asymMap_supp$I_labels
 
 print(map.IJ.asym)
-
-```
-
-```{r }
-
-tweets_bitcoin_supp <- supplementaryRows(tweets_bitcoin_50,resCA.asym)
-asymMap_supp  <- createFactorMapIJ(tweets_bitcoin_supp$fii[tweets_bitcoin_supp$fii[,1] > 0,] ,Fj[Fj[,1] > 0,] ,
-                             #col.points.i = color4Authors,
-                             #col.labels.i = color4Authors
-                             )
-
-map.IJ.asym <- asymMap$baseMap + #asymMap$I_labels + 
-  #asymMap$I_points + 
-  asymMap$J_labels + 
-  asymMap$J_points + labels4CA + #+ legend$zeMap_dots + legend$zeMap_text
-  asymMap_supp$I_points + asymMap_supp$I_labels
-
-print(map.IJ.asym)
-
-```
-
-
-```{r}
-
-tweets_bitcoin_50['#freecoin',]
-
-```
-
-```{r}
-
-tweets_bitcoin_50['#crowdfund',]
-
-```
-
-```{r}
-
-tweets_bitcoin_50['#crowdsal',]
 
 ```
 
